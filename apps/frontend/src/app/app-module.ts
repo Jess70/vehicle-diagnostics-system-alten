@@ -34,9 +34,9 @@ import { App } from './app';
 import { appRoutes } from './app.routes';
 
 
-import { FileUploadComponent } from './components/file-upload.component';
-import { LogSearchComponent } from './components/log-search.component';
-import { FileManagerComponent } from './components/file-manager.component';
+import { FileUploadComponent } from './components/file-upload/file-upload.component';
+import { LogSearchComponent } from './components/log-search/log-search.component';
+import { FileManagerComponent } from './components/file-manager/file-manager.component';
 
 @NgModule({
     declarations: [
