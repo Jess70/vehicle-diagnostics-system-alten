@@ -1,0 +1,166 @@
+<div class="log-search-container">
+  <mat-card class="search-form-card">
+
+    
+    <mat-card-content>
+      <form [formGroup]="searchForm" class="search-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Vehicle ID</mat-label>
+          <input matInput formControlName="vehicle">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Error Code</mat-label>
+          <input matInput formControlName="code">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Log Level</mat-label>
+          <mat-select formControlName="level">
+            <mat-option value="">All Levels</mat-option>
+            <mat-option value="INFO">Info</mat-option>
+            <mat-option value="WARN">Warning</mat-option>
+            <mat-option value="ERROR">Error</mat-option>
+            <mat-option value="DEBUG">Debug</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>From Date (YYYY-MM-DD)</mat-label>
+          <input matInput [matDatepicker]="fromPicker" formControlName="from" placeholder="YYYY-MM-DD (e.g., 2025-01-01)">
+          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker [touchUi]="false" [startAt]="startDate"></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>To Date (YYYY-MM-DD)</mat-label>
+          <input matInput [matDatepicker]="toPicker" formControlName="to" placeholder="YYYY-MM-DD (e.g., 2025-01-31)">
+          <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+          <mat-datepicker #toPicker [touchUi]="false" [startAt]="endDate"></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Search Message</mat-label>
+          <input matInput formControlName="search">
+        </mat-form-field>
+      </form>
+
+      <div class="action-buttons">
+        <div class="button-group">
+          <button mat-raised-button color="primary" (click)="searchLogs()" [disabled]="isLoading">
+            Search
+          </button>
+          <button mat-button (click)="clearSearch()">
+            Clear
+          </button>
+        </div>
+        
+        <div class="results-count" *ngIf="totalResults > 0">
+          Found {{totalResults}} results
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card *ngIf="dataSource.data.length > 0 || isLoading" class="results-card">
+    <mat-card-header>
+      <mat-card-title>
+        Search Results
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <!-- Loading -->
+      <div *ngIf="isLoading" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Searching logs...</p>
+      </div>
+
+      <!-- Results Table -->
+      <div *ngIf="!isLoading && dataSource.data.length > 0" class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort>
+          <!-- Timestamp Column -->
+          <ng-container matColumnDef="timestamp">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Timestamp</th>
+            <td mat-cell *matCellDef="let log">
+              {{apiService.formatDate(log.timestamp)}}
+            </td>
+          </ng-container>
+
+          <!-- Vehicle ID Column -->
+          <ng-container matColumnDef="vehicleId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Vehicle</th>
+            <td mat-cell *matCellDef="let log">
+              <div class="vehicle-chip">{{log.vehicleId}}</div>
+            </td>
+          </ng-container>
+
+          <!-- Level Column -->
+          <ng-container matColumnDef="level">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Level</th>
+            <td mat-cell *matCellDef="let log">
+              <span class="level-chip" [class]="apiService.getLogLevelColor(log.level)">
+                {{log.level}}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Code Column -->
+          <ng-container matColumnDef="code">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Code</th>
+            <td mat-cell *matCellDef="let log">
+              <code class="code-chip">{{log.code}}</code>
+            </td>
+          </ng-container>
+
+          <!-- Message Column -->
+          <ng-container matColumnDef="message">
+            <th mat-header-cell *matHeaderCellDef>Message</th>
+            <td mat-cell *matCellDef="let log">
+              <div class="message-text" [title]="log.message">{{log.message}}</div>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let log">
+              <button mat-button [matMenuTriggerFor]="actionMenu" class="action-button">
+                Actions
+              </button>
+              <mat-menu #actionMenu="matMenu" class="action-menu">
+                <button mat-menu-item (click)="filterByVehicle(log.vehicleId)" class="menu-item">
+                  Filter by Vehicle
+                </button>
+                <button mat-menu-item (click)="filterByCode(log.code)" class="menu-item">
+                  Filter by Code
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+              class="table-row"
+              (click)="viewLogDetails(row)"></tr>
+        </table>
+
+        <!-- Paginator -->
+        <mat-paginator 
+          [pageSizeOptions]="[25, 50, 100]"
+          [pageSize]="pageSize"
+          [length]="totalResults"
+          (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
+
+      <!-- No Results -->
+      <div *ngIf="!isLoading && dataSource.data.length === 0 && hasSearched" 
+           class="no-results">
+        <h3>No logs found</h3>
+        <p>Try adjusting your search criteria or check if logs have been uploaded and processed.</p>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

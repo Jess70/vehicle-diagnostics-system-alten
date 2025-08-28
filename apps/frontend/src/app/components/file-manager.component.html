@@ -1,0 +1,135 @@
+<div class="file-manager-container">
+  <mat-card class="main-card">
+    <mat-card-header>
+      <mat-card-title class="card-title">Uploaded Files</mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <div *ngIf="isLoading" class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p class="loading-text">Loading files...</p>
+      </div>
+
+      <div *ngIf="!isLoading" class="table-container">
+        <table mat-table [dataSource]="dataSource" class="files-table">
+          <ng-container matColumnDef="filename">
+            <th mat-header-cell *matHeaderCellDef class="table-header">File Name</th>
+            <td mat-cell *matCellDef="let file" class="file-cell">
+              <div class="file-info">
+                <div class="file-name">{{file.filename}}</div>
+                <div class="file-size">{{apiService.formatFileSize(file.sizeBytes)}}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="table-header">Status</th>
+            <td mat-cell *matCellDef="let file" class="status-cell">
+              <div class="status-container">
+                <span class="status-badge" [class]="getStatusClass(file.status)">
+                  {{file.status}}
+                </span>
+                <mat-progress-bar 
+                  *ngIf="file.status === 'PROCESSING'"
+                  [value]="getProcessingProgress(file)"
+                  mode="determinate"
+                  class="progress-bar">
+                </mat-progress-bar>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="progress">
+            <th mat-header-cell *matHeaderCellDef class="table-header">Progress</th>
+            <td mat-cell *matCellDef="let file" class="progress-cell">
+              <div *ngIf="file.status === 'PROCESSING'" class="progress-info">
+                <div class="progress-percentage">{{getProcessingProgress(file)}}%</div>
+                <div class="progress-details">
+                  {{apiService.formatFileSize(file.lastProcessedOffset)}} / {{apiService.formatFileSize(file.sizeBytes)}}
+                </div>
+              </div>
+              <div *ngIf="file.status === 'COMPLETED'" class="status-complete">
+                Complete
+              </div>
+              <div *ngIf="file.status === 'PENDING'" class="status-pending">
+                Queued
+              </div>
+              <div *ngIf="file.status === 'FAILED'" class="status-failed">
+                Failed
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef class="table-header">Uploaded</th>
+            <td mat-cell *matCellDef="let file" class="date-cell">
+              {{apiService.formatDate(file.createdAt)}}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="updatedAt">
+            <th mat-header-cell *matHeaderCellDef class="table-header">Last Updated</th>
+            <td mat-cell *matCellDef="let file" class="date-cell">
+              {{apiService.formatDate(file.updatedAt)}}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="table-header">Actions</th>
+            <td mat-cell *matCellDef="let file" class="actions-cell">
+              <button mat-button [matMenuTriggerFor]="actionMenu" class="action-button">
+                Actions
+              </button>
+              <mat-menu #actionMenu="matMenu" class="action-menu">
+                <button mat-menu-item (click)="deleteFile(file)" class="menu-item delete-item">
+                  Delete
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="table-header-row"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row"></tr>
+        </table>
+
+        <!-- No Files Message -->
+        <div *ngIf="dataSource.data.length === 0" class="empty-state">
+          <h3 class="empty-title">No files uploaded</h3>
+          <p class="empty-description">Upload some diagnostic log files to get started.</p>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Error Files Section -->
+  <div *ngIf="errorFiles.length > 0" class="error-section">
+    <mat-card class="error-card">
+      <mat-card-header>
+        <mat-card-title class="error-title">
+          Files with Errors ({{errorFiles.length}})
+        </mat-card-title>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div *ngFor="let file of errorFiles" class="error-item">
+          <div class="error-content">
+            <div class="error-file-info">
+              <div class="error-file-name">{{file.filename}}</div>
+              <div class="error-message" *ngIf="file.errorMessage">
+                {{file.errorMessage}}
+              </div>
+              <div class="error-details">
+                Failed on {{apiService.formatDate(file.updatedAt)}} after {{file.attempts}} attempts
+              </div>
+            </div>
+            <div class="error-actions">
+              <button mat-button color="warn" (click)="reprocessFile(file)" class="retry-button">
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

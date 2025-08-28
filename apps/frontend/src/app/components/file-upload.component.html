@@ -1,0 +1,73 @@
+<div class="file-upload-container">
+  <div class="upload-area mb-6">
+    <div 
+      class="upload-dropzone rounded-lg p-8 text-center cursor-pointer"
+      [class.dragover]="isDragOver"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)">
+      
+      <input 
+        #fileInput
+        type="file"
+        class="hidden"
+        accept=".txt,.log"
+        multiple
+        (change)="onFileSelect($event)">
+      
+     
+      
+      <h3 class="text-lg font-medium text-gray-900 mb-2">
+        Drop diagnostic log files here
+      </h3>
+      
+      <p class="text-sm text-gray-500 mb-4">
+        Supported formats: .txt, .log only
+      </p>
+    </div>
+  </div>
+
+  <div *ngIf="uploadingFiles.length > 0" class="upload-progress">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Upload Progress</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngFor="let fileInfo of uploadingFiles" class="file-item">
+          <div class="file-header">
+            <div class="file-info">
+              <mat-icon [class]="getStatusIcon(fileInfo.status)">
+                {{getStatusIconName(fileInfo.status)}}
+              </mat-icon>
+              <div class="file-details">
+                <div class="file-name">{{fileInfo.file.name}}</div>
+                <div class="file-size">{{apiService.formatFileSize(fileInfo.file.size)}}</div>
+              </div>
+            </div>
+            
+            <div class="file-status">
+              <div class="status-message" [class]="getStatusColor(fileInfo.status)">
+                {{fileInfo.message}}
+              </div>
+              <div class="progress-text" *ngIf="fileInfo.status === 'processing'">
+                {{fileInfo.progress}}% complete
+              </div>
+            </div>
+          </div>
+          
+          <mat-progress-bar 
+            *ngIf="fileInfo.status === 'uploading' || fileInfo.status === 'processing'"
+            [value]="fileInfo.progress"
+            mode="determinate"
+            class="progress-bar">
+          </mat-progress-bar>
+          
+          <div *ngIf="fileInfo.error" class="error-message">
+            <mat-icon>error</mat-icon>
+            {{fileInfo.error}}
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

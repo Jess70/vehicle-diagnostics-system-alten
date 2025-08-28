@@ -1,0 +1,574 @@
+/* You can add global styles to this file, and also import other style files */
+
+/* TailwindCSS disabled for now - using basic CSS utilities */
+
+/* Angular Material Basic Styles */
+/* Using default Material theme for now */
+
+/* Global styles */
+html, body { 
+  height: 100%; 
+  margin: 0; 
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background-color: #f9fafb;
+}
+
+/* Custom component styles */
+.upload-dropzone {
+  border: 2px dashed #d1d5db;
+  transition: all 0.2s ease-in-out;
+}
+
+.upload-dropzone.dragover {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.log-level-info {
+  color: #2563eb;
+  background-color: #dbeafe;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.log-level-warn {
+  color: #d97706;
+  background-color: #fef3c7;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.log-level-error {
+  color: #dc2626;
+  background-color: #fee2e2;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.log-level-debug {
+  color: #6b7280;
+  background-color: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.vehicle-chip {
+  background-color: #e5f3ff;
+  color: #1976d2;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: inline-block;
+}
+
+/* Utility classes */
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.space-x-6 > * + * {
+  margin-left: 1.5rem;
+}
+
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .md\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+.mr-1 {
+  margin-right: 0.25rem;
+}
+
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+.p-6 {
+  padding: 1.5rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.text-gray-900 {
+  color: #111827;
+}
+
+.text-gray-600 {
+  color: #4b5563;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.text-blue-600 {
+  color: #2563eb;
+}
+
+.text-green-600 {
+  color: #16a34a;
+}
+
+.text-orange-600 {
+  color: #ea580c;
+}
+
+.text-purple-600 {
+  color: #9333ea;
+}
+
+.bg-white {
+  background-color: #ffffff;
+}
+
+.bg-gray-50 {
+  background-color: #f9fafb;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.shadow-md {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.border-b {
+  border-bottom-width: 1px;
+}
+
+.border-b-2 {
+  border-bottom-width: 2px;
+}
+
+.border-blue-500 {
+  border-color: #3b82f6;
+}
+
+.border-transparent {
+  border-color: transparent;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1536px;
+  }
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.overflow-x-auto {
+  overflow-x: auto;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.max-w-md {
+  max-width: 28rem;
+}
+
+.hover\:bg-gray-50:hover {
+  background-color: #f9fafb;
+}
+
+.flex-1 {
+  flex: 1 1 0%;
+}
+
+/* Angular Material Calendar Overrides */
+/* These need to be in global styles to override Material's default styles */
+
+/* Calendar content background */
+.mat-calendar-content {
+  background-color: white !important;
+  background: white !important;
+}
+
+/* Calendar popup background */
+.mat-datepicker-popup {
+  background-color: white !important;
+  background: white !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Calendar table and all its elements */
+.mat-calendar,
+.mat-calendar *,
+.mat-calendar-table,
+.mat-calendar-table *,
+.mat-calendar-body,
+.mat-calendar-body * {
+  background-color: white !important;
+  background: white !important;
+}
+
+/* Calendar header */
+.mat-calendar-header {
+  background-color: white !important;
+  background: white !important;
+  border-bottom: 1px solid #e0e0e0 !important;
+}
+
+/* Calendar navigation */
+.mat-calendar-navigation {
+  background-color: white !important;
+  background: white !important;
+}
+
+/* Calendar body cells */
+.mat-calendar-body-cell {
+  background-color: white !important;
+  background: white !important;
+  color: #333 !important;
+}
+
+.mat-calendar-body-cell:hover {
+  background-color: #f5f5f5 !important;
+  background: #f5f5f5 !important;
+}
+
+.mat-calendar-body-cell.mat-calendar-body-active {
+  background-color: #1976d2 !important;
+  background: #1976d2 !important;
+  color: white !important;
+}
+
+.mat-calendar-body-cell.mat-calendar-body-selected {
+  background-color: #1976d2 !important;
+  background: #1976d2 !important;
+  color: white !important;
+}
+
+/* Calendar body cell content */
+.mat-calendar-body-cell-content {
+  background-color: white !important;
+  background: white !important;
+}
+
+/* Calendar body label (month name) */
+.mat-calendar-body-label {
+  background-color: white !important;
+  background: white !important;
+  color: #333 !important;
+}
+
+/* Overlay context */
+.cdk-overlay-pane .mat-calendar-content,
+.cdk-overlay-pane .mat-datepicker-popup,
+.cdk-overlay-pane .mat-calendar,
+.cdk-overlay-pane .mat-calendar * {
+  background-color: white !important;
+  background: white !important;
+}
+
+/* Override any transparent backgrounds */
+[style*="background: transparent"],
+[style*="background-color: transparent"] {
+  background: white !important;
+  background-color: white !important;
+}
+
+/* Force background on any element with mat-calendar in class name */
+[class*="mat-calendar"] {
+  background: white !important;
+  background-color: white !important;
+}
+
+/* Angular Material Paginator Select Menu Overrides */
+/* These need to be in global styles to override Material's default styles */
+
+/* Paginator select panel background */
+.mat-mdc-select-panel {
+  background: white !important;
+  background-color: white !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Paginator select options */
+.mat-mdc-option {
+  background: white !important;
+  background-color: white !important;
+  color: #333 !important;
+  padding: 8px 16px !important;
+}
+
+.mat-mdc-option:hover {
+  background: #f5f5f5 !important;
+  background-color: #f5f5f5 !important;
+}
+
+.mat-mdc-option.mat-mdc-option-active {
+  background: #e3f2fd !important;
+  background-color: #e3f2fd !important;
+}
+
+/* Override paginator overlay backgrounds */
+.cdk-overlay-pane .mat-mdc-select-panel,
+.cdk-overlay-pane .mat-mdc-option {
+  background: white !important;
+  background-color: white !important;
+}
+
+/* Target paginator specific elements */
+.mat-mdc-paginator .mat-mdc-select-panel,
+.mat-mdc-paginator .mat-mdc-option {
+  background: white !important;
+  background-color: white !important;
+}
+
+/* Force background on any element with mat-select in class name */
+[class*="mat-select"] {
+  background: white !important;
+  background-color: white !important;
+}
+
+/* Override any transparent backgrounds for select elements */
+[style*="background: transparent"],
+[style*="background-color: transparent"] {
+  background: white !important;
+  background-color: white !important;
+}
+
+/* Angular Material Snackbar Custom Styles */
+/* Custom snackbar panel classes */
+.success-snackbar {
+  background: #10b981 !important;
+  color: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.error-snackbar {
+  background: #ef4444 !important;
+  color: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Snackbar close button hover fix - More specific selectors */
+.mat-mdc-snack-bar-action button,
+.mat-mdc-snack-bar-action .mat-mdc-button,
+.mat-mdc-snack-bar-action .mat-mdc-button-base {
+  color: rgba(255, 255, 255, 0.8) !important;
+  transition: color 0.2s ease-in-out !important;
+}
+
+.mat-mdc-snack-bar-action button:hover,
+.mat-mdc-snack-bar-action .mat-mdc-button:hover,
+.mat-mdc-snack-bar-action .mat-mdc-button-base:hover {
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Specific styling for success and error snackbar close buttons */
+.success-snackbar .mat-mdc-snack-bar-action button,
+.success-snackbar .mat-mdc-snack-bar-action .mat-mdc-button,
+.success-snackbar .mat-mdc-snack-bar-action .mat-mdc-button-base {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.success-snackbar .mat-mdc-snack-bar-action button:hover,
+.success-snackbar .mat-mdc-snack-bar-action .mat-mdc-button:hover,
+.success-snackbar .mat-mdc-snack-bar-action .mat-mdc-button-base:hover {
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.error-snackbar .mat-mdc-snack-bar-action button,
+.error-snackbar .mat-mdc-snack-bar-action .mat-mdc-button,
+.error-snackbar .mat-mdc-snack-bar-action .mat-mdc-button-base {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.error-snackbar .mat-mdc-snack-bar-action button:hover,
+.error-snackbar .mat-mdc-snack-bar-action .mat-mdc-button:hover,
+.error-snackbar .mat-mdc-snack-bar-action .mat-mdc-button-base:hover {
+  color: #fecaca !important;
+  background-color: rgba(254, 202, 202, 0.2) !important;
+}
+
+/* Even more specific selectors to override Material styles */
+.cdk-overlay-pane .error-snackbar .mat-mdc-snack-bar-action button:hover,
+.cdk-overlay-pane .error-snackbar .mat-mdc-snack-bar-action .mat-mdc-button:hover,
+.cdk-overlay-pane .error-snackbar .mat-mdc-snack-bar-action .mat-mdc-button-base:hover {
+  color: #fecaca !important;
+  background-color: rgba(254, 202, 202, 0.2) !important;
+}
+
+/* Maximum specificity to override Angular Material styles */
+.cdk-overlay-container .cdk-overlay-pane .error-snackbar .mat-mdc-snack-bar-action button:hover,
+.cdk-overlay-container .cdk-overlay-pane .error-snackbar .mat-mdc-snack-bar-action .mat-mdc-button:hover,
+.cdk-overlay-container .cdk-overlay-pane .error-snackbar .mat-mdc-snack-bar-action .mat-mdc-button-base:hover,
+.cdk-overlay-container .cdk-overlay-pane .error-snackbar .mat-mdc-snack-bar-action .mat-mdc-button-base.mat-mdc-button:hover {
+  color: #fecaca !important;
+  background-color: rgba(254, 202, 202, 0.2) !important;
+}
+
+/* Force override with attribute selectors */
+[class*="error-snackbar"] [class*="mat-mdc-snack-bar-action"] button:hover,
+[class*="error-snackbar"] [class*="mat-mdc-snack-bar-action"] .mat-mdc-button:hover,
+[class*="error-snackbar"] [class*="mat-mdc-snack-bar-action"] .mat-mdc-button-base:hover {
+  color: #fecaca !important;
+  background-color: rgba(254, 202, 202, 0.2) !important;
+}

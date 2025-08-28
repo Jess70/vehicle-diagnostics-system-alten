@@ -1,0 +1,49 @@
+// Material UI Toolbar Spacing Fixes
+.mat-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  
+  .mat-toolbar-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-left: 12px;
+    margin-right: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .mat-toolbar-spacer {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  
+  .mat-icon {
+    margin-right: 8px;
+    width: 64px;
+    height: 64px;
+    font-size: 64px;
+  }
+  
+  // Add spacing between toolbar elements
+  > * {
+    margin-right: 8px;
+    
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+// Ensure proper container layout
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+  }
+}
