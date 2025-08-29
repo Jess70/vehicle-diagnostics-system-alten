@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as readline from 'readline';
-import { LogLevel } from '../../entities/log-entry.entity';
+import { LogLevel } from '../entities/log-entry.entity';
 
 export interface ParsedLogEntry {
   vehicleId: string;

@@ -1,22 +1,7 @@
 import { Controller, Post, Body, Get, Param, Delete, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { StorageService, PreSignedUrlResponse } from './storage.service';
-import { IsString, IsOptional, IsNumber, Min, Max } from 'class-validator';
-
-class GenerateUploadUrlDto {
-  @IsString()
-  filename: string;
-
-  @IsOptional()
-  @IsString()
-  contentType?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(300) 
-  @Max(86400) 
-  expiresIn?: number;
-}
+import { StorageUploadUrlDto } from '../../dto/storage-upload-url.dto';
 
 @ApiTags('Storage')
 @Controller('api/storage')
@@ -31,9 +16,9 @@ export class StorageController {
     type: Object,
   })
   @ApiResponse({ status: 400, description: 'Invalid file type or parameters' })
-  @ApiBody({ type: GenerateUploadUrlDto })
+  @ApiBody({ type: StorageUploadUrlDto })
   async generateUploadUrl(
-    @Body() generateUploadUrlDto: GenerateUploadUrlDto
+    @Body() generateUploadUrlDto: StorageUploadUrlDto
   ): Promise<PreSignedUrlResponse> {
     const { filename, contentType, expiresIn = 3600 } = generateUploadUrlDto;
     

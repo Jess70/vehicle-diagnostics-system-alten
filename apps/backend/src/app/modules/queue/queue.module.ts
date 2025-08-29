@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileProcessorConsumer } from './file-processor.consumer';
-import { LogParserService } from '../log-parser/log-parser.service';
+import { LogParserService } from '../../utils/log-parser.service';
 import { File } from '../../entities/file.entity';
 import { LogEntry } from '../../entities/log-entry.entity';
 import { FilesModule } from '../files/files.module';

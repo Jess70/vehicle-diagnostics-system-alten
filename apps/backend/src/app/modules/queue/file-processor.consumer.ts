@@ -4,7 +4,7 @@ import { Job } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { File, FileStatus } from '../../entities/file.entity';
-import { LogParserService } from '../log-parser/log-parser.service';
+import { LogParserService } from '../../utils/log-parser.service';
 import { LogsService } from '../logs/logs.service';
 import { NotificationGateway } from '../websocket/notification.gateway';
 import { StorageService } from '../storage/storage.service';

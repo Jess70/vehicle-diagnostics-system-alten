@@ -8,28 +8,10 @@ import {
   ParseIntPipe
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, Min } from 'class-validator';
 import { FilesService } from './files.service';
 import { FileDto, FileUploadResponseDto, FileProcessingProgressDto } from '../../dto/file.dto';
-
-class GenerateUploadUrlDto {
-  @IsString()
-  filename: string;
-
-  @IsOptional()
-  @IsString()
-  contentType?: string;
-
-  @IsOptional()
-  @IsNumber()
-  uploaderId?: number;
-}
-
-class NotifyUploadCompleteDto {
-  @IsNumber()
-  @Min(1)
-  sizeBytes: number;
-}
+import { GenerateUploadUrlDto } from '../../dto/generate-upload-url.dto';
+import { NotifyUploadCompleteDto } from '../../dto/notify-upload-complete.dto';
 
 @ApiTags('files')
 @Controller('files')
