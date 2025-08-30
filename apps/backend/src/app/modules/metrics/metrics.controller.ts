@@ -36,15 +36,7 @@ files_failed_total{error_type="unknown"} 2`
     return this.metricsService.getMetrics();
   }
 
-  @Get('core')
-  @Header('Content-Type', 'text/plain')
-  @ApiOperation({ 
-    summary: 'Get core file metrics only',
-    description: 'Retrieve ONLY the 3 core file processing metrics without any system metrics' 
-  })
-  async getCoreMetrics(): Promise<string> {
-    return this.metricsService.getCoreMetrics();
-  }
+
 
   @Get('health')
   @ApiOperation({ 

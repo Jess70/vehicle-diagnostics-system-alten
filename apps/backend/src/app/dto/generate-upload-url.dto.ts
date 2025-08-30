@@ -17,13 +17,4 @@ export class GenerateUploadUrlDto {
   @IsOptional()
   @IsString()
   contentType?: string;
-
-  @ApiProperty({ 
-    description: 'ID of the user uploading the file',
-    example: 1,
-    required: false
-  })
-  @IsOptional()
-  @IsNumber()
-  uploaderId?: number;
 }

@@ -18,9 +18,6 @@ export class LogEntry {
   id: number;
 
   @Column()
-  fileId: number;
-
-  @Column()
   vehicleId: string;
 
   @Column({ type: 'datetime' })

@@ -76,13 +76,11 @@ export class App implements OnInit, OnDestroy {
 
   private async loadStats(): Promise<void> {
     try {
-      // Get file stats
       const files = await this.apiService.getFiles();
       this.totalFiles = files.length;
       this.processedFiles = files.filter(f => f.status === 'COMPLETED').length;
       this.pendingFiles = files.filter(f => f.status === 'PENDING' || f.status === 'PROCESSING').length;
 
-      // Get log stats
       const logStats = await this.apiService.getLogStats();
       this.totalLogs = logStats.totalLogs;
       

@@ -25,9 +25,6 @@ export class File {
   @Column()
   objectName: string;
 
-  @Column({ nullable: true })
-  uploaderId?: number;
-
   @Column({ type: 'integer' })
   sizeBytes: number;
 
@@ -46,9 +43,6 @@ export class File {
 
   @Column({ type: 'integer', default: 0 })
   attempts: number;
-
-  @Column({ type: 'integer', default: 90 })
-  retentionDays: number;
 
   @Column({ nullable: true })
   errorMessage?: string;

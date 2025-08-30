@@ -9,7 +9,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { FilesService } from './files.service';
-import { FileDto, FileUploadResponseDto, FileProcessingProgressDto } from '../../dto/file.dto';
+import { File } from '../../entities/file.entity';
+import { FileUploadResponseDto, FileProcessingProgressDto } from '../../dto/file.dto';
 import { GenerateUploadUrlDto } from '../../dto/generate-upload-url.dto';
 import { NotifyUploadCompleteDto } from '../../dto/notify-upload-complete.dto';
 
@@ -35,8 +36,7 @@ export class FilesController {
   async generateUploadUrl(@Body() generateUploadUrlDto: GenerateUploadUrlDto) {
     return this.filesService.generateUploadUrl(
       generateUploadUrlDto.filename,
-      generateUploadUrlDto.contentType,
-      generateUploadUrlDto.uploaderId
+      generateUploadUrlDto.contentType
     );
   }
 
@@ -75,9 +75,9 @@ export class FilesController {
   @ApiResponse({ 
     status: 200, 
     description: 'List of files retrieved successfully',
-    type: [FileDto] 
+    type: [File] 
   })
-  async findAll(): Promise<FileDto[]> {
+  async findAll(): Promise<File[]> {
     return this.filesService.findAll();
   }
 
@@ -94,13 +94,13 @@ export class FilesController {
   @ApiResponse({ 
     status: 200, 
     description: 'File details retrieved successfully',
-    type: FileDto 
+    type: File 
   })
   @ApiResponse({ 
     status: 404, 
     description: 'File not found' 
   })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<FileDto> {
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<File> {
     return this.filesService.findById(id);
   }
 

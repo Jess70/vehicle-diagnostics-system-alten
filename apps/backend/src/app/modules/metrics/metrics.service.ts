@@ -59,9 +59,7 @@ export class MetricsService {
     return metrics.join('\n');
   }
 
-  async getCoreMetrics(): Promise<string> {
-    return this.getMetrics();
-  }
+
 
   async getHealthStatus(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';

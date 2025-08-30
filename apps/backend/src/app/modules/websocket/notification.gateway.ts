@@ -86,45 +86,36 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   emitFileStatusUpdate(fileId: number, update: FileStatusUpdate): void {
-    const roomName = `file-${fileId}`;
-    const payload = {
-      fileId,
-      ...update,
-      timestamp: new Date().toISOString(),
-    };
+    try {
+      const roomName = `file-${fileId}`;
+      const payload = {
+        fileId,
+        ...update,
+        timestamp: new Date().toISOString(),
+      };
 
-    this.server.to(roomName).emit('file-status-update', payload);
-    this.logger.debug(`Emitted status update for file ${fileId}: ${update.status}`);
+      this.server.to(roomName).emit('file-status-update', payload);
+      this.logger.debug(`Emitted status update for file ${fileId}: ${update.status}`);
+    } catch (error) {
+      this.logger.error(`Failed to emit file status update for ${fileId}`, error);
+    }
   }
 
   emitNotification(type: 'info' | 'warning' | 'error' | 'success', message: string, data?: Record<string, unknown>): void {
-    const payload = {
-      type,
-      message,
-      data,
-      timestamp: new Date().toISOString(),
-    };
+    try {
+      const payload = {
+        type,
+        message,
+        data,
+        timestamp: new Date().toISOString(),
+      };
 
-    this.server.emit('notification', payload);
-    this.logger.debug(`Emitted ${type} notification: ${message}`);
+      this.server.emit('notification', payload);
+      this.logger.debug(`Emitted ${type} notification: ${message}`);
+    } catch (error) {
+      this.logger.error(`Failed to emit notification: ${message}`, error);
+    }
   }
 
-  getConnectedClientsCount(): number {
-    return this.connectedClients.size;
-  }
-
-  emitSystemStatus(status: {
-    totalFiles?: number;
-    processingFiles?: number;
-    queueLength?: number;
-  }): void {
-    const payload = {
-      ...status,
-      timestamp: new Date().toISOString(),
-    };
-
-    this.server.emit('system-status', payload);
-    this.logger.debug('Emitted system status update');
-  }
 }
 
