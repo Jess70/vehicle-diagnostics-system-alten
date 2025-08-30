@@ -1,5 +1,6 @@
-import { Processor, Process } from '@nestjs/bull';
-import { Logger, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Processor, Process, OnQueueError, OnQueueFailed } from '@nestjs/bull';
+import { Logger, UseFilters } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Job } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,6 +12,14 @@ import { NotificationGateway } from '../websocket/notification.gateway';
 import { StorageService } from '../storage/storage.service';
 import { MetricsService } from '../metrics/metrics.service';
 
+import { 
+  FileProcessingException, 
+  FileNotFoundProcessingException, 
+  StorageProcessingException, 
+  ParseProcessingException 
+} from '../../exceptions/file-processing.exception';
+import { FileProcessingExceptionFilter } from '../../filters/file-processing-exception.filter';
+
 interface FileProcessingJob {
   fileId: number;
   bucketName: string;
@@ -18,6 +27,7 @@ interface FileProcessingJob {
 }
 
 @Processor('file-processing')
+@UseFilters(FileProcessingExceptionFilter)
 export class FileProcessorConsumer {
   private readonly logger = new Logger(FileProcessorConsumer.name);
 
@@ -30,11 +40,13 @@ export class FileProcessorConsumer {
     private readonly notificationGateway: NotificationGateway,
     private readonly storageService: StorageService,
     private readonly metricsService: MetricsService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Process('process-file')
   async processFile(job: Job<FileProcessingJob>): Promise<void> {
     const { fileId, bucketName, objectName } = job.data;
+    const startTime = Date.now();
     
     this.logger.log(`Processing file ${fileId}: ${bucketName}/${objectName}`);
 
@@ -49,7 +61,7 @@ export class FileProcessorConsumer {
 
       const file = await this.fileRepository.findOne({ where: { id: fileId } });
       if (!file) {
-        throw new NotFoundException(`File with ID ${fileId} not found`);
+        throw new FileNotFoundProcessingException(fileId);
       }
 
       const objectInfo = await this.storageService.getObjectInfo(objectName);
@@ -59,7 +71,6 @@ export class FileProcessorConsumer {
       let totalProcessedEntries = 0;
       let batchNumber = 0;
 
-      // Download file once and parse all entries
       const stream = await this.storageService.getObject(objectName);
       this.logger.log(`Starting to parse stream from offset ${totalProcessedBytes}`);
       const parseResult = await this.logParserService.parseStreamFromOffset(
@@ -69,14 +80,14 @@ export class FileProcessorConsumer {
       this.logger.log(`Parsed ${parseResult.entries.length} entries from stream`);
 
       if (parseResult.entries.length > 0) {
-        // Process entries in batches for database insertion
-        const batchSize = parseInt(process.env.LOG_PARSE_BATCH_SIZE || '100');
+       
+        const batchSize = this.configService.get('fileProcessing.logParseBatchSize');
         
         for (let i = 0; i < parseResult.entries.length; i += batchSize) {
           batchNumber++;
           const batch = parseResult.entries.slice(i, i + batchSize);
           
-          // Add file relation to each log entry
+        
           const batchWithFile = batch.map(entry => ({
             ...entry,
             file: file
@@ -85,7 +96,6 @@ export class FileProcessorConsumer {
           await this.logsService.bulkInsertLogs(batchWithFile);
           totalProcessedEntries += batch.length;
 
-          // Update progress tracking
           const currentProgress = ((i + batch.length) / parseResult.entries.length) * 100;
           await job.progress(Math.round(currentProgress));
 
@@ -105,10 +115,8 @@ export class FileProcessorConsumer {
         }
       }
 
-      // Update final status
       totalProcessedBytes = parseResult.processedBytes;
       
-      // Update file status with final progress
       await this.filesService.updateFileStatus(
         fileId,
         FileStatus.PROCESSING,
@@ -136,43 +144,30 @@ export class FileProcessorConsumer {
       );
 
     } catch (error) {
-      this.logger.error(`Error processing file ${fileId}`, error);
-      
-      let errorMessage = 'Unknown error occurred';
-      let errorType = 'unknown';
-      
-      if (error instanceof NotFoundException) {
-        errorMessage = error.message;
-        errorType = 'not_found';
-      } else if (error instanceof InternalServerErrorException) {
-        errorMessage = 'Storage service error';
-        errorType = 'storage_error';
-      } else if (error.message) {
-        errorMessage = error.message;
-        errorType = error.name || 'processing_error';
+      if (error instanceof FileProcessingException) {
+        throw error; 
       }
       
-      try {
-        await this.filesService.updateFileStatus(fileId, FileStatus.FAILED, errorMessage);
-      } catch (updateError) {
-        this.logger.error(`Failed to update file status for ${fileId}`, updateError);
+      if (error.message?.includes('storage') || error.message?.includes('MinIO')) {
+        throw new StorageProcessingException(fileId, error.message);
       }
       
-      this.metricsService.incrementFilesFailed(errorType);
-      
-      try {
-        this.notificationGateway.emitFileStatusUpdate(fileId, {
-          status: FileStatus.FAILED,
-          progressPercent: 0,
-          message: `Processing failed: ${errorMessage}`
-        });
-      } catch (notificationError) {
-        this.logger.error(`Failed to emit notification for ${fileId}`, notificationError);
+      if (error.message?.includes('parse') || error.message?.includes('format')) {
+        throw new ParseProcessingException(fileId, error.message);
       }
-
-      throw error; 
+      
+      throw new FileProcessingException(error.message || 'Unknown processing error', fileId);
     }
   }
 
+  @OnQueueError()
+  onError(error: Error) {
+    this.logger.error('Queue processing error:', error);
+  }
+
+  @OnQueueFailed()
+  onFailed(job: Job, error: Error) {
+    this.logger.error(`Job ${job.id} failed:`, error);
+  }
 }
 

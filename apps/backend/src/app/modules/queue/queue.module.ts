@@ -10,6 +10,7 @@ import { LogsModule } from '../logs/logs.module';
 import { WebSocketModule } from '../websocket/websocket.module';
 import { StorageModule } from '../storage/storage.module';
 import { MetricsModule } from '../metrics/metrics.module';
+import { FileProcessingExceptionFilter } from '../../filters/file-processing-exception.filter';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { MetricsModule } from '../metrics/metrics.module';
     WebSocketModule,
     MetricsModule,
   ],
-  providers: [FileProcessorConsumer, LogParserService],
+  providers: [FileProcessorConsumer, LogParserService, FileProcessingExceptionFilter],
   exports: [FileProcessorConsumer, LogParserService],
 })
 export class QueueModule {}
