@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileProcessorConsumer } from './file-processor.consumer';
@@ -18,7 +18,7 @@ import { MetricsModule } from '../metrics/metrics.module';
     }),
     TypeOrmModule.forFeature([File, LogEntry]),
     StorageModule,
-    FilesModule,
+    forwardRef(() => FilesModule),
     LogsModule,
     WebSocketModule,
     MetricsModule,

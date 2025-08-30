@@ -126,6 +126,9 @@ MINIO_BUCKET=vehicle-logs
 # File Upload Constraints
 SUPPORTED_FORMATS=.txt,.log
 
+# Log Processing Configuration
+LOG_PARSE_BATCH_SIZE=100  # Number of log entries to process per batch
+
 # MinIO Root Credentials (for MinIO service itself)
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=minioadmin123

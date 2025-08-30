@@ -57,6 +57,7 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin123}
       - MINIO_BUCKET=${MINIO_BUCKET:-vehicle-logs}
+      - LOG_PARSE_BATCH_SIZE=${LOG_PARSE_BATCH_SIZE:-100}
     volumes:
       - database_data:/usr/src/app/data
     healthcheck:
