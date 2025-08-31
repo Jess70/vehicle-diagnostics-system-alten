@@ -21,8 +21,6 @@ export const redisConfig = registerAs('redis', () => ({
 export const minioConfig = registerAs('minio', () => ({
   endpoint: process.env.MINIO_ENDPOINT || 'localhost:9000',
   publicEndpoint: process.env.MINIO_PUBLIC_ENDPOINT || 'localhost:9000',
-  accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-  secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin123',
   bucket: process.env.MINIO_BUCKET || 'vehicle-logs',
   rootUser: process.env.MINIO_ROOT_USER || 'minioadmin',
   rootPassword: process.env.MINIO_ROOT_PASSWORD || 'minioadmin123',
@@ -66,14 +64,6 @@ export const validationSchema = Joi.object({
     .pattern(/^[a-zA-Z0-9.-]+:\d+$/)
     .required()
     .description('MinIO public endpoint in format host:port'),
-  MINIO_ACCESS_KEY: Joi.string()
-    .min(3)
-    .required()
-    .description('MinIO access key'),
-  MINIO_SECRET_KEY: Joi.string()
-    .min(8)
-    .required()
-    .description('MinIO secret key'),
   MINIO_BUCKET: Joi.string()
     .pattern(/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/)
     .required()

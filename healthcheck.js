@@ -4,7 +4,7 @@ const options = {
   host: 'localhost',
   port: process.env.PORT || 3000,
   timeout: 5000,
-  path: '/api/metrics/health'
+  path: '/api/health'
 };
 
 const healthCheck = http.request(options, (res) => {
@@ -19,7 +19,7 @@ const healthCheck = http.request(options, (res) => {
     if (res.statusCode === 200) {
       try {
         const healthData = JSON.parse(data);
-        console.log(`Health status: ${healthData.status}, DB: ${healthData.checks.database}, Uptime: ${healthData.metrics.uptime}s`);
+        console.log(`Health check passed - Status: ${healthData.status}`);
         process.exit(0);
       } catch (parseError) {
         console.log('Health check passed but response not JSON');

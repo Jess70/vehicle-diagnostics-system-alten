@@ -15,6 +15,7 @@ import { QueueModule } from './modules/queue/queue.module';
 import { WebSocketModule } from './modules/websocket/websocket.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { StorageModule } from './modules/storage/storage.module';
     QueueModule,
     WebSocketModule,
     MetricsModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -69,7 +69,7 @@ export class FilesService {
       },
     });
 
-    this.metricsService.incrementFilesUploaded('success');
+    this.metricsService.incrementFilesUploaded();
     
     this.logger.log(`File queued for processing: ${fileId}`);
 

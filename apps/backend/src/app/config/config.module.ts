@@ -26,7 +26,7 @@ import {
       envFilePath: ['.env', '.env.local', '.env.development'],
       validationSchema,
       validationOptions: {
-        allowUnknown: false, // Strict validation - only allow defined env vars
+        allowUnknown: true, 
         abortEarly: true,    // Stop on first validation error
       },
       expandVariables: true, // Allow variable expansion like ${VAR}

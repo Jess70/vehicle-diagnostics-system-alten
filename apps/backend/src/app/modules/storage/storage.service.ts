@@ -26,8 +26,8 @@ export class StorageService {
       endPoint: host,
       port: parseInt(port, 10),
       useSSL: false, 
-      accessKey: this.configService.get('minio.accessKey'),
-      secretKey: this.configService.get('minio.secretKey'),
+      accessKey: this.configService.get('minio.rootUser'),
+      secretKey: this.configService.get('minio.rootPassword'),  
     });
 
     this.publicMinioClient = this.minioClient;
