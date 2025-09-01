@@ -12,7 +12,7 @@ export class RedisHealthIndicator {
     private healthIndicatorService: HealthIndicatorService,
   ) {
     
-    // Create Redis connection for health checks
+
     this.redis = new Redis({
       host: this.configService.get('redis.host'),
       port: this.configService.get('redis.port'),
@@ -28,7 +28,6 @@ export class RedisHealthIndicator {
       const host = this.configService.get('redis.host');
       const port = this.configService.get('redis.port');
       
-      // Test Redis connectivity with ping
       const pong = await this.redis.ping();
       const isHealthy = pong === 'PONG';
       

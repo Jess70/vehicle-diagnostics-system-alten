@@ -4,18 +4,13 @@ This document outlines potential improvements and architectural enhancements for
 
 ## Immediate Improvements (Technical Debt)
 
-
-### NgRx State Management
-**Current**: Manual RxJS state management  
-**Enhancement**: Implement NgRx for predictable state changes, better debugging with Redux DevTools, and improved testing capabilities. Essential for complex Angular applications.
-
-### Clean Architecture Implementation
-**Current**: Direct database access mixed with business logic  
-**Enhancement**: Implement proper layered architecture with domain separation, use cases, and infrastructure adapters. This allows switching databases (SQLite → PostgreSQL) without changing business logic.
-
 ### Pluggable File Format & Structure Support  
 **Current**: Single hardcoded log parser for fixed structure  
 **Enhancement**: Strategy pattern with factory for different file formats AND structures. Supports CSV with custom column mapping, JSON with different schemas, XML with various structures. New formats and data structures can be added by implementing parser interfaces without modifying existing code.
+
+### BullMQ Scalable Worker Architecture
+**Current**: Single worker processes files sequentially  
+**Enhancement**: Separate BullMQ workers can be spawned as independent processes/containers, enabling horizontal scaling. Multiple workers can process different files simultaneously, improving system throughput and fault tolerance.
 
 ### Database Abstraction Layer
 **Current**: Direct TypeORM usage in services  
@@ -39,8 +34,6 @@ This document outlines potential improvements and architectural enhancements for
 **Current**: Direct database queries for all requests  
 **Enhancement**: Intelligent caching layer for frequently accessed log data - cache popular vehicle searches and error code lookups, time-based invalidation for real-time consistency, distributed cache sharing across backend instances.
 
-
-
 ### Compressed Log Storage  
 **Current**: Raw log files stored uncompressed in MinIO  
 **Enhancement**: Implement compression (gzip/lz4) before storing processed logs in S3/MinIO to reduce storage costs by 70-80%.
@@ -57,14 +50,13 @@ This document outlines potential improvements and architectural enhancements for
 
 ### Data Lifecycle Management
 **Current**: No retention policies  
-**Enhancement**: Automated archival with configurable retention by log level (DEBUG: 7 days, ERROR: 365 days). Cold storage integration with S3 Glacier for cost-effective long-term storage.
+**Enhancement**: Automated archival with configurable retention by log level (DEBUG: 7 days, ERROR: 365 days).
 
 ## Testing
 
 ### Comprehensive Test Coverage
 **Current**: No automated testing  
 **Enhancement**: Multi-level testing strategy with unit tests (Jest) and E2E tests (Cypress).
-
 
 
 ---
