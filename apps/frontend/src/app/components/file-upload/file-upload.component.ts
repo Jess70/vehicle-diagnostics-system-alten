@@ -1,18 +1,15 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Subject } from 'rxjs';
-import { takeUntil, filter } from 'rxjs/operators';
-import { ApiService } from '../../services/api.service';
-import { WebSocketService, FileStatusUpdate } from '../../services/websocket.service';
-
-interface UploadingFile {
-  file: File;
-  fileId?: number;
-  status: 'uploading' | 'processing' | 'completed' | 'failed';
-  progress: number;
-  message: string;
-  error?: string;
-}
+import { Store } from '@ngrx/store';
+import { Subject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { ApiService } from '../../core/services/api.service';
+import { WebSocketService } from '../../core/services/websocket.service';
+import { formatFileSize, validateFile } from '../../core/utils';
+import { FileDto, FileStatus } from '../../core/types';
+import { AppState } from '../../store/app.state';
+import * as FilesActions from '../../store/actions/files.actions';
+import { selectAllFiles } from '../../store/selectors/files.selectors';
 
 @Component({
   selector: 'app-file-upload',
@@ -21,32 +18,34 @@ interface UploadingFile {
   styleUrls: ['./file-upload.component.scss']
 })
 export class FileUploadComponent implements OnInit, OnDestroy {
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('fileInput', { static: false }) fileInput!: ElementRef<HTMLInputElement>;
 
-  uploadingFiles: UploadingFile[] = [];
+  processingFiles$!: Observable<FileDto[]>;
   isDragOver = false;
-  
   private destroy$ = new Subject<void>();
 
   constructor(
     public apiService: ApiService,
     private webSocketService: WebSocketService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private store: Store<AppState>
   ) {}
 
   ngOnInit(): void {
-    this.webSocketService.fileUpdates
-      .pipe(
-        takeUntil(this.destroy$),
-        filter((update): update is FileStatusUpdate => update !== null)
-      )
-      .subscribe(update => this.handleFileStatusUpdate(update));
+      this.processingFiles$ = this.store.select(selectAllFiles).pipe(
+        map(files => files.filter(file => 
+          file.status === FileStatus.PENDING || 
+          file.status === FileStatus.PROCESSING
+        ))
+      );
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+
 
   onDragOver(event: DragEvent): void {
     event.preventDefault();
@@ -74,38 +73,39 @@ export class FileUploadComponent implements OnInit, OnDestroy {
     target.value = '';
   }
 
-  onSelectFilesClick(event: Event): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.fileInput.nativeElement.click();
-  }
-
   private async handleFiles(files: File[]): Promise<void> {
     for (const file of files) {
-      if (!this.validateFile(file)) {
+      const validation = validateFile(file);
+      if (!validation.isValid) {
+        this.snackBar.open(validation.error!, 'Close', {
+          duration: 5000,
+          panelClass: 'error-snackbar'
+        });
         continue;
       }
 
-      const uploadingFile: UploadingFile = {
-        file,
-        status: 'uploading',
-        progress: 0,
-        message: 'Uploading...'
-      };
-
-      this.uploadingFiles.push(uploadingFile);
-
       try {
-        const response = await this.apiService.uploadFile(file, (progress) => {
-          uploadingFile.progress = Math.round(progress);
-          uploadingFile.message = `Uploading... ${Math.round(progress)}%`;
-        });
-        
-        uploadingFile.fileId = response.fileId;
-        uploadingFile.status = 'processing';
-        uploadingFile.message = 'Upload complete, processing file...';
-        uploadingFile.progress = 0;
+        const response = await this.apiService.uploadFile(file);
 
+        const newFile: FileDto = {
+          id: response.fileId,
+          filename: file.name,
+          storagePath: `uploads/${response.fileId}/${file.name}`,
+          bucketName: 'vehicle-logs',
+          objectName: file.name,
+          status: FileStatus.PENDING,
+          sizeBytes: file.size,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastProcessedLine: undefined,
+          lastProcessedOffset: 0,
+          attempts: 0,
+          retentionDays: 30,
+          errorMessage: undefined,
+          progressPercent: 0
+        };
+        
+        this.store.dispatch(FilesActions.addFile({ file: newFile }));
         this.webSocketService.subscribeToFile(response.fileId);
 
         this.snackBar.open(`File "${file.name}" uploaded to storage successfully!`, 'Close', {
@@ -114,11 +114,10 @@ export class FileUploadComponent implements OnInit, OnDestroy {
         });
 
       } catch (error: unknown) {
-        uploadingFile.status = 'failed';
-        uploadingFile.message = 'Upload failed';
-        uploadingFile.error = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('❌ Upload failed for', file.name, ':', errorMessage);
 
-        this.snackBar.open(`Failed to upload "${file.name}"`, 'Close', {
+        this.snackBar.open(`Failed to upload "${file.name}": ${errorMessage}`, 'Close', {
           duration: 5000,
           panelClass: 'error-snackbar'
         });
@@ -126,86 +125,47 @@ export class FileUploadComponent implements OnInit, OnDestroy {
     }
   }
 
-  private validateFile(file: File): boolean {
-    const allowedTypes = ['.txt', '.log'];
-    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-    
-    if (!allowedTypes.includes(fileExtension)) {
-      this.snackBar.open(
-        `File "${file.name}" has unsupported format. Allowed: ${allowedTypes.join(', ')}`,
-        'Close',
-        { duration: 5000, panelClass: 'error-snackbar' }
-      );
-      return false;
-    }
-
-
-
-    return true;
-  }
-
-  private handleFileStatusUpdate(update: FileStatusUpdate): void {
-    const fileInfo = this.uploadingFiles.find(f => f.fileId === update.fileId);
-    if (!fileInfo) return;
-
-    fileInfo.progress = update.progressPercent;
-    fileInfo.message = update.message;
-
-    switch (update.status) {
-      case 'PROCESSING':
-        fileInfo.status = 'processing';
-        break;
-      case 'COMPLETED':
-        fileInfo.status = 'completed';
-        fileInfo.progress = 100;
-        fileInfo.message = 'Processing completed successfully';
-        
-        this.snackBar.open(
-          `File "${fileInfo.file.name}" processed successfully!`,
-          'Close',
-          { duration: 5000, panelClass: 'success-snackbar' }
-        );
-        break;
-      case 'FAILED':
-        fileInfo.status = 'failed';
-        fileInfo.error = update.message;
-        
-        this.snackBar.open(
-          `File "${fileInfo.file.name}" processing failed`,
-          'Close',
-          { duration: 5000, panelClass: 'error-snackbar' }
-        );
-        break;
-    }
-  }
-
-  getStatusIcon(status: string): string {
+  getFileStatusIcon(status: FileStatus): string {
     switch (status) {
-      case 'uploading': return 'text-blue-600';
-      case 'processing': return 'text-orange-600';
-      case 'completed': return 'text-green-600';
-      case 'failed': return 'text-red-600';
-      default: return 'text-gray-600';
-    }
-  }
-
-  getStatusIconName(status: string): string {
-    switch (status) {
-      case 'uploading': return 'cloud_upload';
-      case 'processing': return 'settings';
-      case 'completed': return 'check_circle';
-      case 'failed': return 'error';
+      case FileStatus.PENDING: return 'schedule';
+      case FileStatus.PROCESSING: return 'autorenew';
+      case FileStatus.COMPLETED: return 'check_circle';
+      case FileStatus.FAILED: return 'error';
       default: return 'help';
     }
   }
 
-  getStatusColor(status: string): string {
+  getFileStatusIconColor(status: FileStatus): string {
     switch (status) {
-      case 'uploading': return 'status-uploading';
-      case 'processing': return 'status-processing';
-      case 'completed': return 'status-completed';
-      case 'failed': return 'status-failed';
+      case FileStatus.PENDING: return 'text-yellow-600';
+      case FileStatus.PROCESSING: return 'text-orange-600';
+      case FileStatus.COMPLETED: return 'text-green-600';
+      case FileStatus.FAILED: return 'text-red-600';
       default: return 'text-gray-600';
     }
+  }
+
+  getFileStatusColor(status: FileStatus): string {
+    switch (status) {
+      case FileStatus.PENDING: return 'status-pending';
+      case FileStatus.PROCESSING: return 'status-processing';
+      case FileStatus.COMPLETED: return 'status-completed';
+      case FileStatus.FAILED: return 'status-failed';
+      default: return 'text-gray-600';
+    }
+  }
+
+  getFileStatusMessage(file: FileDto): string {
+    switch (file.status) {
+      case FileStatus.PENDING: return 'Queued for processing...';
+      case FileStatus.PROCESSING: return `Processing... ${file.progressPercent || 0}%`;
+      case FileStatus.COMPLETED: return 'Processing complete!';
+      case FileStatus.FAILED: return file.errorMessage || 'Processing failed';
+      default: return `Unknown status: ${file.status}`;
+    }
+  }
+
+  formatFileSize(bytes: number): string {
+    return formatFileSize(bytes);
   }
 }

@@ -37,39 +37,28 @@ export class LogsController {
     return this.logsService.findLogs(queryDto);
   }
 
-  @Get('stats')
+  @Get('count')
   @ApiOperation({ 
-    summary: 'Get log statistics',
-    description: 'Get aggregate statistics about the log data' 
+    summary: 'Get total count of all logs',
+    description: 'Returns the total number of log entries in the database' 
   })
   @ApiResponse({ 
     status: 200, 
-    description: 'Statistics retrieved successfully',
+    description: 'Total count of log entries',
     schema: {
       type: 'object',
       properties: {
-        totalLogs: { type: 'number', example: 15000 },
-        uniqueVehicles: { type: 'number', example: 25 },
-        uniqueCodes: { type: 'number', example: 150 },
-        logsByLevel: {
-          type: 'object',
-          example: {
-            'INFO': 8000,
-            'ERROR': 3000,
-            'WARN': 3500,
-            'DEBUG': 500
-          }
+        total: {
+          type: 'number',
+          example: 1250,
+          description: 'Total number of log entries'
         }
       }
     }
   })
-  async getStats(): Promise<{
-    totalLogs: number;
-    uniqueVehicles: number;
-    uniqueCodes: number;
-    logsByLevel: Record<string, number>;
-  }> {
-    return this.logsService.getLogStats();
+  async getTotalCount(): Promise<{ total: number }> {
+    return this.logsService.getTotalCount();
   }
+
 }
 

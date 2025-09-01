@@ -119,23 +119,22 @@ REDIS_PORT=6379
 # MinIO Configuration
 MINIO_ENDPOINT=localhost:9000
 MINIO_PUBLIC_ENDPOINT=localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin123
 MINIO_BUCKET=vehicle-logs
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin123
 
 # File Upload Constraints
 SUPPORTED_FORMATS=.txt,.log
 
-# MinIO Root Credentials (for MinIO service itself)
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=minioadmin123
+# Log Processing Configuration
+LOG_PARSE_BATCH_SIZE=100  # Number of log entries to process per batch
 ```
 
 ## 📊 Monitoring
 
 ### Health Check
 ```bash
-curl http://localhost:3000/api/metrics/health
+curl http://localhost:3000/api/health
 ```
 
 ### Metrics

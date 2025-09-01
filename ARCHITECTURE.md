@@ -268,15 +268,24 @@ const jobOptions = {
 
 ```typescript
 // Application health endpoint
-GET /api/metrics/health
+GET /api/health
 
 Response:
 {
-  "status": "healthy",
-  "database": "connected",
-  "redis": "connected", 
-  "minio": "connected",
-  "workers": 3
+  "status": "ok",
+  "info": {
+    "database": {
+      "status": "up"
+    }
+  },
+  "error": {
+
+  },
+  "details": {
+    "database": {
+      "status": "up"
+    }
+  }
 }
 ```
 
@@ -284,7 +293,7 @@ Response:
 
 ```prometheus
 # Business metrics
-files_uploaded_total{status="success"} 1234
+files_uploaded_total 1234
 files_processed_total 1200
 files_failed_total{error_type="parse_error"} 34
 

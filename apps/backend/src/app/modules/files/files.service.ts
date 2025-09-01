@@ -21,7 +21,7 @@ export class FilesService {
     private readonly metricsService: MetricsService,
   ) {}
 
-  async generateUploadUrl(filename: string, contentType?: string, uploaderId?: number) {
+  async generateUploadUrl(filename: string, contentType?: string) {
     this.logger.log(`Generating upload URL for: ${filename}`);
 
     const uploadDetails = await this.storageService.generatePreSignedUrl(filename, contentType);
@@ -31,7 +31,6 @@ export class FilesService {
       storagePath: `${uploadDetails.bucket}/${uploadDetails.objectName}`, 
       bucketName: uploadDetails.bucket,
       objectName: uploadDetails.objectName,
-      uploaderId,
       sizeBytes: 0, 
       status: FileStatus.PENDING,
     });
@@ -70,7 +69,7 @@ export class FilesService {
       },
     });
 
-    this.metricsService.incrementFilesUploaded('success');
+    this.metricsService.incrementFilesUploaded();
     
     this.logger.log(`File queued for processing: ${fileId}`);
 
@@ -81,15 +80,13 @@ export class FilesService {
     };
   }
 
-  async findAll(): Promise<FileDto[]> {
-    const files = await this.fileRepository.find({
+  async findAll(): Promise<File[]> {
+    return await this.fileRepository.find({
       order: { createdAt: 'DESC' },
     });
-
-    return files.map(file => this.mapFileToDto(file));
   }
 
-  async findById(id: number): Promise<FileDto> {
+  async findById(id: number): Promise<File> {
     const file = await this.fileRepository.findOne({
       where: { id },
     });
@@ -98,7 +95,7 @@ export class FilesService {
       throw new NotFoundException(`File with ID ${id} not found`);
     }
 
-    return this.mapFileToDto(file);
+    return file;
   }
 
   async updateFileStatus(
@@ -170,22 +167,5 @@ export class FilesService {
     this.logger.log(`File ${id} deleted successfully`);
   }
 
-  private mapFileToDto(file: File): FileDto {
-    return {
-      id: file.id,
-      filename: file.filename,
-      storagePath: file.storagePath,
-      bucketName: file.bucketName,
-      objectName: file.objectName,
-      sizeBytes: file.sizeBytes,
-      status: file.status,
-      lastProcessedOffset: file.lastProcessedOffset,
-      lastProcessedLine: file.lastProcessedLine,
-      attempts: file.attempts,
-      retentionDays: file.retentionDays,
-      errorMessage: file.errorMessage,
-      createdAt: file.createdAt,
-      updatedAt: file.updatedAt,
-    };
-  }
+
 }

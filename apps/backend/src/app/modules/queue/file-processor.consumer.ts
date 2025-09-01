@@ -1,14 +1,24 @@
-import { Processor, Process } from '@nestjs/bull';
-import { Logger } from '@nestjs/common';
+import { Processor, Process, OnQueueError, OnQueueFailed } from '@nestjs/bull';
+import { Logger, UseFilters } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Job } from 'bull';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { File, FileStatus } from '../../entities/file.entity';
-import { LogParserService } from '../log-parser/log-parser.service';
+import { LogParserService } from '../../utils/log-parser.service';
 import { LogsService } from '../logs/logs.service';
+import { FilesService } from '../files/files.service';
 import { NotificationGateway } from '../websocket/notification.gateway';
 import { StorageService } from '../storage/storage.service';
 import { MetricsService } from '../metrics/metrics.service';
+
+import { 
+  FileProcessingException, 
+  FileNotFoundProcessingException, 
+  StorageProcessingException, 
+  ParseProcessingException 
+} from '../../exceptions/file-processing.exception';
+import { FileProcessingExceptionFilter } from '../../filters/file-processing-exception.filter';
 
 interface FileProcessingJob {
   fileId: number;
@@ -17,6 +27,7 @@ interface FileProcessingJob {
 }
 
 @Processor('file-processing')
+@UseFilters(FileProcessingExceptionFilter)
 export class FileProcessorConsumer {
   private readonly logger = new Logger(FileProcessorConsumer.name);
 
@@ -25,19 +36,22 @@ export class FileProcessorConsumer {
     private readonly fileRepository: Repository<File>,
     private readonly logParserService: LogParserService,
     private readonly logsService: LogsService,
+    private readonly filesService: FilesService,
     private readonly notificationGateway: NotificationGateway,
     private readonly storageService: StorageService,
     private readonly metricsService: MetricsService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Process('process-file')
   async processFile(job: Job<FileProcessingJob>): Promise<void> {
     const { fileId, bucketName, objectName } = job.data;
+    const startTime = Date.now();
     
     this.logger.log(`Processing file ${fileId}: ${bucketName}/${objectName}`);
 
     try {
-      await this.updateFileStatus(fileId, FileStatus.PROCESSING);
+      await this.filesService.updateFileStatus(fileId, FileStatus.PROCESSING);
       
       this.notificationGateway.emitFileStatusUpdate(fileId, {
         status: FileStatus.PROCESSING,
@@ -47,7 +61,7 @@ export class FileProcessorConsumer {
 
       const file = await this.fileRepository.findOne({ where: { id: fileId } });
       if (!file) {
-        throw new Error(`File with ID ${fileId} not found`);
+        throw new FileNotFoundProcessingException(fileId);
       }
 
       const objectInfo = await this.storageService.getObjectInfo(objectName);
@@ -57,52 +71,61 @@ export class FileProcessorConsumer {
       let totalProcessedEntries = 0;
       let batchNumber = 0;
 
-      while (totalProcessedBytes < fileSize) {
-        batchNumber++;
-        
-        const stream = await this.storageService.getObject(objectName);
-        
-        const parseResult = await this.logParserService.parseStream(
-          stream,
-          fileId,
-          totalProcessedBytes
-        );
+      const stream = await this.storageService.getObject(objectName);
+      this.logger.log(`Starting to parse stream from offset ${totalProcessedBytes}`);
+      const parseResult = await this.logParserService.parseStreamFromOffset(
+        stream,
+        totalProcessedBytes
+      );
+      this.logger.log(`Parsed ${parseResult.entries.length} entries from stream`);
 
-        if (parseResult.entries.length === 0 && parseResult.processedBytes === totalProcessedBytes) {
-          break;
+      if (parseResult.entries.length > 0) {
+       
+        const batchSize = this.configService.get('fileProcessing.logParseBatchSize');
+        
+        for (let i = 0; i < parseResult.entries.length; i += batchSize) {
+          batchNumber++;
+          const batch = parseResult.entries.slice(i, i + batchSize);
+          
+        
+          const batchWithFile = batch.map(entry => ({
+            ...entry,
+            file: file
+          }));
+          
+          await this.logsService.bulkInsertLogs(batchWithFile);
+          totalProcessedEntries += batch.length;
+
+          const currentProgress = ((i + batch.length) / parseResult.entries.length) * 100;
+          await job.progress(Math.round(currentProgress));
+
+          this.notificationGateway.emitFileStatusUpdate(fileId, {
+            status: FileStatus.PROCESSING,
+            progressPercent: Math.round(currentProgress),
+            processedBytes: parseResult.processedBytes,
+            totalBytes: fileSize,
+            processedEntries: totalProcessedEntries,
+            message: `Processing batch ${batchNumber} (${totalProcessedEntries} entries)`
+          });
+
+          this.logger.log(
+            `File ${fileId} - Batch ${batchNumber}: ${batch.length} entries, ` +
+            `${Math.round(currentProgress)}% complete (${totalProcessedEntries}/${parseResult.entries.length} entries)`
+          );
         }
-
-        if (parseResult.entries.length > 0) {
-          await this.logsService.bulkInsertLogs(parseResult.entries);
-          totalProcessedEntries += parseResult.entries.length;
-        }
-
-        totalProcessedBytes = parseResult.processedBytes;
-        
-        await this.fileRepository.update(fileId, {
-          lastProcessedOffset: totalProcessedBytes,
-          lastProcessedLine: (file.lastProcessedLine || 0) + parseResult.processedLines,
-        });
-
-        const progressPercent = (totalProcessedBytes / fileSize) * 100;
-        await job.progress(Math.round(progressPercent));
-
-        this.notificationGateway.emitFileStatusUpdate(fileId, {
-          status: FileStatus.PROCESSING,
-          progressPercent: Math.round(progressPercent),
-          processedBytes: totalProcessedBytes,
-          totalBytes: fileSize,
-          processedEntries: totalProcessedEntries,
-          message: `Processing batch ${batchNumber}`
-        });
-
-        this.logger.log(
-          `File ${fileId} - Batch ${batchNumber}: ${parseResult.entries.length} entries, ` +
-          `${Math.round(progressPercent)}% complete`
-        );
       }
 
-      await this.updateFileStatus(fileId, FileStatus.COMPLETED);
+      totalProcessedBytes = parseResult.processedBytes;
+      
+      await this.filesService.updateFileStatus(
+        fileId,
+        FileStatus.PROCESSING,
+        undefined,
+        totalProcessedBytes,
+        (file.lastProcessedLine || 0) + parseResult.processedLines
+      );
+
+      await this.filesService.updateFileStatus(fileId, FileStatus.COMPLETED);
       
       this.metricsService.incrementFilesProcessed();
       
@@ -121,36 +144,30 @@ export class FileProcessorConsumer {
       );
 
     } catch (error) {
-      this.logger.error(`Error processing file ${fileId}`, error);
+      if (error instanceof FileProcessingException) {
+        throw error; 
+      }
       
-      await this.updateFileStatus(fileId, FileStatus.FAILED, error.message);
+      if (error.message?.includes('storage') || error.message?.includes('MinIO')) {
+        throw new StorageProcessingException(fileId, error.message);
+      }
       
-      this.metricsService.incrementFilesFailed(error.name || 'unknown');
+      if (error.message?.includes('parse') || error.message?.includes('format')) {
+        throw new ParseProcessingException(fileId, error.message);
+      }
       
-      this.notificationGateway.emitFileStatusUpdate(fileId, {
-        status: FileStatus.FAILED,
-        progressPercent: 0,
-        message: `Processing failed: ${error.message}`
-      });
-
-      throw error; 
+      throw new FileProcessingException(error.message || 'Unknown processing error', fileId);
     }
   }
 
-  private async updateFileStatus(
-    fileId: number,
-    status: FileStatus,
-    errorMessage?: string
-  ): Promise<void> {
-    const updateData: { status: FileStatus; errorMessage?: string; lastProcessedOffset?: number; lastProcessedLine?: number } = { status };
-    
-    if (errorMessage) {
-      updateData.errorMessage = errorMessage;
-    }
-
-    await this.fileRepository.update(fileId, updateData);
+  @OnQueueError()
+  onError(error: Error) {
+    this.logger.error('Queue processing error:', error);
   }
 
-
+  @OnQueueFailed()
+  onFailed(job: Job, error: Error) {
+    this.logger.error(`Job ${job.id} failed:`, error);
+  }
 }
 

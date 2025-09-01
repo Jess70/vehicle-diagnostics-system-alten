@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <div class="app-container h-full">
-  <!-- Main Content Area -->
   <div class="main-content bg-gray-50 min-h-screen">
     <div class="mx-auto px-4 py-6">
-      <!-- Hero Section -->
+
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">
           Vehicle Diagnostic Log Management
@@ -13,73 +12,66 @@
         </p>
       </div>
 
-      <!-- Quick Stats Cards -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <mat-card class="stats-card">
           <mat-card-content class="text-center p-4">
-   
-            <div class="text-2xl font-bold text-gray-900">{{totalFiles || 0}}</div>
+            <div class="text-2xl font-bold text-gray-900">{{(fileStats$ | async)?.totalFiles || 0}}</div>
             <div class="text-sm text-gray-500">Files Uploaded</div>
           </mat-card-content>
         </mat-card>
 
         <mat-card class="stats-card">
           <mat-card-content class="text-center p-4">
-      
-            <div class="text-2xl font-bold text-gray-900">{{processedFiles || 0}}</div>
+            <div class="text-2xl font-bold text-gray-900">{{(fileStats$ | async)?.processedFiles || 0}}</div>
             <div class="text-sm text-gray-500">Processed</div>
           </mat-card-content>
         </mat-card>
 
         <mat-card class="stats-card">
           <mat-card-content class="text-center p-4">
-            
-            <div class="text-2xl font-bold text-gray-900">{{pendingFiles || 0}}</div>
+            <div class="text-2xl font-bold text-gray-900">{{(fileStats$ | async)?.pendingFiles || 0}}</div>
             <div class="text-sm text-gray-500">Pending</div>
           </mat-card-content>
         </mat-card>
 
         <mat-card class="stats-card">
           <mat-card-content class="text-center p-4">
-
-            <div class="text-2xl font-bold text-gray-900">{{totalLogs || 0}}</div>
+            <div class="text-2xl font-bold text-gray-900">{{(totalLogs$ | async) || 0}}</div>
             <div class="text-sm text-gray-500">Log Entries</div>
           </mat-card-content>
         </mat-card>
       </div>
 
-      <!-- Tab Navigation -->
+
       <mat-card>
         <mat-card-header>
           <mat-card-title>
             <div class="flex space-x-6 border-b">
               <button 
                 class="py-2 px-4 border-b-2 font-medium text-sm"
-                [class.border-blue-500]="activeTab === 'upload'"
-                [class.text-blue-600]="activeTab === 'upload'"
-                [class.border-transparent]="activeTab !== 'upload'"
-                [class.text-gray-500]="activeTab !== 'upload'"
-                (click)="setActiveTab('upload')">
+                [class.border-blue-500]="(activeTab) === 'upload'"
+                [class.text-blue-600]="(activeTab) === 'upload'"
+                [class.border-transparent]="(activeTab) !== 'upload'"
+                [class.text-gray-500]="(activeTab) !== 'upload'"
+                (click)="setActiveTab(TabType.UPLOAD)">
                 Upload Files
               </button>
               <button 
                 class="py-2 px-4 border-b-2 font-medium text-sm"
-                [class.border-blue-500]="activeTab === 'search'"
-                [class.text-blue-600]="activeTab === 'search'"
-                [class.border-transparent]="activeTab !== 'search'"
-                [class.text-gray-500]="activeTab !== 'search'"
-                (click)="setActiveTab('search')">
-           
+                [class.border-blue-500]="(activeTab) === 'search'"
+                [class.text-blue-600]="(activeTab) === 'search'"
+                [class.border-transparent]="(activeTab) !== 'search'"
+                [class.text-gray-500]="(activeTab) !== 'search'"
+                (click)="setActiveTab(TabType.SEARCH)">
                 Search Logs
               </button>
               <button 
                 class="py-2 px-4 border-b-2 font-medium text-sm"
-                [class.border-blue-500]="activeTab === 'files'"
-                [class.text-blue-600]="activeTab === 'files'"
-                [class.border-transparent]="activeTab !== 'files'"
-                [class.text-gray-500]="activeTab !== 'files'"
-                (click)="setActiveTab('files')">
-    
+                [class.border-blue-500]="(activeTab) === 'files'"
+                [class.text-blue-600]="(activeTab) === 'files'"
+                [class.border-transparent]="(activeTab) !== 'files'"
+                [class.text-gray-500]="(activeTab) !== 'files'"
+                (click)="setActiveTab(TabType.FILES)">
                 Manage Files
               </button>
             </div>
@@ -87,18 +79,15 @@
         </mat-card-header>
 
         <mat-card-content class="p-6">
-          <!-- Upload Tab -->
-          <div *ngIf="activeTab === 'upload'">
+          <div *ngIf="activeTab === TabType.UPLOAD">
             <app-file-upload></app-file-upload>
           </div>
 
-          <!-- Search Tab -->
-          <div *ngIf="activeTab === 'search'">
+          <div *ngIf="activeTab === TabType.SEARCH">
             <app-log-search></app-log-search>
           </div>
 
-          <!-- Files Tab -->
-          <div *ngIf="activeTab === 'files'">
+          <div *ngIf="activeTab === TabType.FILES">
             <app-file-manager></app-file-manager>
           </div>
         </mat-card-content>

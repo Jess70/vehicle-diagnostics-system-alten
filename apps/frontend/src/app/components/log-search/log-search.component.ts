@@ -1,10 +1,15 @@
-import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { ApiService, LogEntryDto, LogQueryParams } from '../../services/api.service';
+import { Store } from '@ngrx/store';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { AppState } from '../../store/app.state';
+import { searchLogs, clearLogs } from '../../store/actions/logs.actions';
+import { selectAllLogs, selectLogsSearchTotal, selectLogsLoading, selectLogsError } from '../../store/selectors/logs.selectors';
+import { LogEntryDto, LogQueryParams } from '../../core/types';
+import { formatDate, getLogLevelColor } from '../../core/utils';
 
 @Component({
   selector: 'app-log-search',
@@ -12,144 +17,138 @@ import { ApiService, LogEntryDto, LogQueryParams } from '../../services/api.serv
   templateUrl: './log-search.component.html',
   styleUrls: ['./log-search.component.scss']
 })
-export class LogSearchComponent implements OnInit, AfterViewInit {
+export class LogSearchComponent implements OnInit, OnDestroy {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
 
   searchForm: FormGroup;
   dataSource = new MatTableDataSource<LogEntryDto>([]);
-  displayedColumns = ['timestamp', 'vehicleId', 'level', 'code', 'message', 'actions'];
+  displayedColumns = ['timestamp', 'vehicleId', 'level', 'code', 'message'];
   
-  isLoading = false;
+  logs$: Observable<LogEntryDto[]>;
+  total$: Observable<number>;
+  isLoading$: Observable<boolean>;
+  error$: Observable<string | null>;
+  
   hasSearched = false;
-  totalResults = 0;
   currentPage = 1;
-  pageSize = 25;
-
-  // Date picker properties
-  startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1); // First day of current month
-  endDate = new Date(); // Today
+  pageSize = 10;
+  
+  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
-    public apiService: ApiService
+    private store: Store<AppState>
   ) {
     this.searchForm = this.fb.group({
       vehicle: [''],
-      code: [''],
       level: [''],
+      code: [''],
+      search: [''],
       from: [''],
-      to: [''],
-      search: ['']
+      to: ['']
     });
+
+    this.logs$ = this.store.select(selectAllLogs);
+    this.total$ = this.store.select(selectLogsSearchTotal);
+    this.isLoading$ = this.store.select(selectLogsLoading);
+    this.error$ = this.store.select(selectLogsError);
   }
 
   ngOnInit(): void {
-    // Auto-search when form values change (with debounce)
-    this.searchForm.valueChanges
-      .pipe(
-        debounceTime(500),
-        distinctUntilChanged()
-      )
-      .subscribe(() => {
-        if (this.hasSearched) {
-          this.searchLogs();
-        }
-      });
+    this.logs$.pipe(takeUntil(this.destroy$)).subscribe(logs => {
+      this.dataSource.data = logs;
+    });
 
-    // Initial search to show some data
-    this.searchLogs();
+    this.loadAllLogs();
+
+    this.searchForm.valueChanges.pipe(
+      debounceTime(500),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      if (this.hasSearched) {
+        this.searchLogs();
+      }
+    });
   }
 
-  ngAfterViewInit(): void {
-    // Connect the data source to sort and paginator
-    this.dataSource.sort = this.sort;
-    this.dataSource.paginator = this.paginator;
-    
-    // Set up custom sorting
-    this.dataSource.sortingDataAccessor = (item, property) => {
-      switch (property) {
-        case 'timestamp':
-          return new Date(item.timestamp).getTime();
-        case 'vehicleId':
-          return item.vehicleId;
-        case 'level':
-          return item.level;
-        case 'code':
-          return item.code;
-        case 'message':
-          return item.message;
-        default:
-          return item[property as keyof LogEntryDto];
-      }
+  private loadAllLogs(): void {
+    const params: LogQueryParams = {
+      page: 1,
+      limit: this.pageSize
     };
+    this.store.dispatch(searchLogs({ params }));
+    this.hasSearched = true;
+  }
+
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   async searchLogs(): Promise<void> {
-    this.isLoading = true;
     this.hasSearched = true;
-
-    try {
-      const formValue = this.searchForm.value;
-      const params: LogQueryParams = {
-        ...formValue,
-        from: formValue.from ? formValue.from.toISOString().split('T')[0] : undefined,
-        to: formValue.to ? formValue.to.toISOString().split('T')[0] : undefined,
-        page: this.currentPage,
-        limit: this.pageSize,
-        sortBy: 'timestamp',
-        sortOrder: 'desc'
-      };
-
-      // Remove empty/null values
-      Object.keys(params).forEach(key => {
-        if (params[key as keyof LogQueryParams] === '' || params[key as keyof LogQueryParams] === null) {
-          delete params[key as keyof LogQueryParams];
-        }
-      });
-
-      const result = await this.apiService.getLogs(params);
-      
-      this.dataSource.data = result.data;
-      this.totalResults = result.total;
-
-    } catch (error) {
-      console.error('Error searching logs:', error);
-      this.dataSource.data = [];
-      this.totalResults = 0;
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
-  clearSearch(): void {
-    this.searchForm.reset();
     this.currentPage = 1;
-    this.hasSearched = false;
-    this.dataSource.data = [];
-    this.totalResults = 0;
+
+    const formValue = this.searchForm.value;
+    const params: LogQueryParams = {
+      ...formValue,
+      from: formValue.from ? this.formatDateForAPI(formValue.from) : undefined,
+      to: formValue.to ? this.formatDateForAPI(formValue.to) : undefined,
+      page: this.currentPage,
+      limit: this.pageSize,
+    };
+
+    // Remove empty values
+    Object.keys(params).forEach(key => {
+      if (params[key as keyof LogQueryParams] === '' || params[key as keyof LogQueryParams] === null) {
+        delete params[key as keyof LogQueryParams];
+      }
+    });
+
+    this.store.dispatch(searchLogs({ params }));
   }
 
   onPageChange(event: PageEvent): void {
     this.currentPage = event.pageIndex + 1;
     this.pageSize = event.pageSize;
-    this.searchLogs();
+    
+    if (this.hasSearched) {
+      this.searchLogs();
+    }
   }
 
-  viewLogDetails(log: LogEntryDto): void {
-    // TODO: Implement log details dialog
-    console.log('View log details:', log);
+  clearSearch(): void {
+    this.searchForm.reset();
+    this.hasSearched = false;
+    this.currentPage = 1;
+    this.store.dispatch(clearLogs());
+  }
+
+  formatDate(date: string): string {
+    return formatDate(date);
+  }
+
+  getLogLevelColor(level: string): string {
+    const color = getLogLevelColor(level as any);
+    return color;
   }
 
   filterByVehicle(vehicleId: string): void {
     this.searchForm.patchValue({ vehicle: vehicleId });
-    this.currentPage = 1;
     this.searchLogs();
   }
 
   filterByCode(code: string): void {
-    this.searchForm.patchValue({ code: code });
-    this.currentPage = 1;
+    this.searchForm.patchValue({ code });
     this.searchLogs();
+  }
+
+  private formatDateForAPI(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

@@ -1,8 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FileProcessorConsumer } from './file-processor.consumer';
-import { LogParserService } from '../log-parser/log-parser.service';
+import { LogParserService } from '../../utils/log-parser.service';
 import { File } from '../../entities/file.entity';
 import { LogEntry } from '../../entities/log-entry.entity';
 import { FilesModule } from '../files/files.module';
@@ -10,6 +10,7 @@ import { LogsModule } from '../logs/logs.module';
 import { WebSocketModule } from '../websocket/websocket.module';
 import { StorageModule } from '../storage/storage.module';
 import { MetricsModule } from '../metrics/metrics.module';
+import { FileProcessingExceptionFilter } from '../../filters/file-processing-exception.filter';
 
 @Module({
   imports: [
@@ -18,12 +19,12 @@ import { MetricsModule } from '../metrics/metrics.module';
     }),
     TypeOrmModule.forFeature([File, LogEntry]),
     StorageModule,
-    FilesModule,
+    forwardRef(() => FilesModule),
     LogsModule,
     WebSocketModule,
     MetricsModule,
   ],
-  providers: [FileProcessorConsumer, LogParserService],
+  providers: [FileProcessorConsumer, LogParserService, FileProcessingExceptionFilter],
   exports: [FileProcessorConsumer, LogParserService],
 })
 export class QueueModule {}

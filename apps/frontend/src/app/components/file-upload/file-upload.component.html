@@ -27,44 +27,44 @@
     </div>
   </div>
 
-  <div *ngIf="uploadingFiles.length > 0" class="upload-progress">
+  <div *ngIf="(processingFiles$ | async)?.length" class="upload-progress">
     <mat-card>
       <mat-card-header>
-        <mat-card-title>Upload Progress</mat-card-title>
+        <mat-card-title>Processing Files</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div *ngFor="let fileInfo of uploadingFiles" class="file-item">
+        <div *ngFor="let file of processingFiles$ | async" class="file-item">
           <div class="file-header">
             <div class="file-info">
-              <mat-icon [class]="getStatusIcon(fileInfo.status)">
-                {{getStatusIconName(fileInfo.status)}}
+              <mat-icon [class]="getFileStatusIconColor(file.status)">
+                {{getFileStatusIcon(file.status)}}
               </mat-icon>
               <div class="file-details">
-                <div class="file-name">{{fileInfo.file.name}}</div>
-                <div class="file-size">{{apiService.formatFileSize(fileInfo.file.size)}}</div>
+                <div class="file-name">{{file.filename}}</div>
+                <div class="file-size">{{formatFileSize(file.sizeBytes)}}</div>
               </div>
             </div>
             
             <div class="file-status">
-              <div class="status-message" [class]="getStatusColor(fileInfo.status)">
-                {{fileInfo.message}}
+              <div class="status-message" [class]="getFileStatusColor(file.status)">
+                {{getFileStatusMessage(file)}}
               </div>
-              <div class="progress-text" *ngIf="fileInfo.status === 'processing'">
-                {{fileInfo.progress}}% complete
+              <div class="progress-text" *ngIf="file.status === 'PROCESSING' && file.progressPercent !== undefined">
+                {{file.progressPercent}}% complete
               </div>
             </div>
           </div>
           
           <mat-progress-bar 
-            *ngIf="fileInfo.status === 'uploading' || fileInfo.status === 'processing'"
-            [value]="fileInfo.progress"
+            *ngIf="file.status === 'PENDING' || file.status === 'PROCESSING'"
+            [value]="file.progressPercent || 0"
             mode="determinate"
             class="progress-bar">
           </mat-progress-bar>
           
-          <div *ngIf="fileInfo.error" class="error-message">
+          <div *ngIf="file.status === 'FAILED' && file.errorMessage" class="error-message">
             <mat-icon>error</mat-icon>
-            {{fileInfo.error}}
+            {{file.errorMessage}}
           </div>
         </div>
       </mat-card-content>

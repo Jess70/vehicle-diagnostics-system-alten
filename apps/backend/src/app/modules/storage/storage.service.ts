@@ -19,20 +19,20 @@ export class StorageService {
   private readonly bucketName: string;
 
   constructor(private configService: ConfigService) {
-    const minioEndpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost:9000');
+    const minioEndpoint = this.configService.get('minio.endpoint');
     const [host, port] = minioEndpoint.split(':');
 
     this.minioClient = new Minio.Client({
       endPoint: host,
       port: parseInt(port, 10),
       useSSL: false, 
-      accessKey: this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin'),
-      secretKey: this.configService.get<string>('MINIO_SECRET_KEY', 'minioadmin123'),
+      accessKey: this.configService.get('minio.rootUser'),
+      secretKey: this.configService.get('minio.rootPassword'),  
     });
 
     this.publicMinioClient = this.minioClient;
 
-    this.bucketName = this.configService.get<string>('MINIO_BUCKET', 'vehicle-logs');
+    this.bucketName = this.configService.get('minio.bucket');
     this.initializeBucket();
   }
 
@@ -56,7 +56,7 @@ export class StorageService {
     expiresIn: number = 3600 
   ): Promise<PreSignedUrlResponse> {
     try {
-      const allowedExtensions = ['.txt', '.log'];
+      const allowedExtensions = this.configService.get('fileProcessing.supportedFormats');
       const fileExtension = filename.toLowerCase().substring(filename.lastIndexOf('.'));
       
       if (!allowedExtensions.includes(fileExtension)) {

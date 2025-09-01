@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as readline from 'readline';
-import { LogLevel } from '../../entities/log-entry.entity';
+import { LogLevel } from '../entities/log-entry.entity';
 
 export interface ParsedLogEntry {
   vehicleId: string;
@@ -9,68 +9,14 @@ export interface ParsedLogEntry {
   level: LogLevel;
   code: string;
   message: string;
-  fileId: number;
 }
 
 @Injectable()
 export class LogParserService {
   private readonly logger = new Logger(LogParserService.name);
 
-  async parseFile(
-    filePath: string,
-    fileId: number,
-    startOffset: number = 0
-  ): Promise<{
-    entries: ParsedLogEntry[];
-    processedBytes: number;
-    processedLines: number;
-  }> {
-    const entries: ParsedLogEntry[] = [];
-    let processedBytes = startOffset;
-    let processedLines = 0;
-
-    try {
-      const fileStream = fs.createReadStream(filePath, { 
-        encoding: 'utf8',
-        start: startOffset 
-      });
-      
-      const rl = readline.createInterface({
-        input: fileStream,
-        crlfDelay: Infinity
-      });
-
-      for await (const line of rl) {
-        processedBytes += Buffer.byteLength(line, 'utf8') + 1; 
-        processedLines++;
-
-        const parsedEntry = this.parseLine(line, fileId);
-        if (parsedEntry) {
-          entries.push(parsedEntry);
-        }
-
-        if (entries.length >= 100) {
-          break;
-        }
-      }
-
-      this.logger.log(`Parsed ${entries.length} entries from ${processedLines} lines`);
-      
-      return {
-        entries,
-        processedBytes,
-        processedLines
-      };
-
-    } catch (error) {
-      this.logger.error(`Error parsing file ${filePath}`, error);
-      throw error;
-    }
-  }
-
-  async parseStream(
+  async parseStreamFromOffset(
     stream: NodeJS.ReadableStream,
-    fileId: number,
     startOffset: number = 0
   ): Promise<{
     entries: ParsedLogEntry[];
@@ -99,17 +45,13 @@ export class LogParserService {
         processedBytes += lineBytes;
         processedLines++;
 
-        const parsedEntry = this.parseLine(line, fileId);
+        const parsedEntry = this.parseLine(line);
         if (parsedEntry) {
           entries.push(parsedEntry);
         }
-
-        if (entries.length >= 100) {
-          break;
-        }
       }
 
-      this.logger.log(`Parsed ${entries.length} entries from ${processedLines} lines (stream)`);
+      this.logger.log(`Parsed ${entries.length} entries from ${processedLines} lines (from offset ${startOffset})`);
       
       return {
         entries,
@@ -118,12 +60,12 @@ export class LogParserService {
       };
 
     } catch (error) {
-      this.logger.error(`Error parsing stream`, error);
+      this.logger.error(`Error parsing stream from offset`, error);
       throw error;
     }
   }
 
-  parseLine(line: string, fileId: number): ParsedLogEntry | null {
+  parseLine(line: string): ParsedLogEntry | null {
     const regex = /^\[([^\]]+)\]\s*\[VEHICLE_ID:([^\]]+)\]\s*\[([^\]]+)\]\s*\[CODE:([^\]]+)\]\s*\[(.+)\]$/;
     
     const match = line.trim().match(regex);
@@ -153,8 +95,7 @@ export class LogParserService {
         timestamp,
         level,
         code: code.trim(),
-        message: message.trim(),
-        fileId
+        message: message.trim()
       };
 
     } catch (error) {
@@ -206,7 +147,7 @@ export class LogParserService {
       for await (const line of rl) {
         totalLines++;
         
-        if (this.parseLine(line, 0)) {
+        if (this.parseLine(line)) {
           validLines++;
         }
 

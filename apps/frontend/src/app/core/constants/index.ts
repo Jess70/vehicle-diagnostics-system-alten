@@ -1,0 +1,2 @@
+export const STATS_REFRESH_INTERVAL = 30000;
+export const LOG_REFRESH_DELAY = 4000;

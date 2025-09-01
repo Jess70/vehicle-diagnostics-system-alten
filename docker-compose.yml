@@ -54,9 +54,10 @@ services:
       - DATABASE_PATH=${DATABASE_PATH:-/usr/src/app/data/vehicle_diagnostics.db}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT:-localhost:9000}
       - MINIO_PUBLIC_ENDPOINT=${MINIO_PUBLIC_ENDPOINT:-localhost:9000}
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin123}
       - MINIO_BUCKET=${MINIO_BUCKET:-vehicle-logs}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin123}
+      - LOG_PARSE_BATCH_SIZE=${LOG_PARSE_BATCH_SIZE:-100}
     volumes:
       - database_data:/usr/src/app/data
     healthcheck:

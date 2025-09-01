@@ -35,9 +35,6 @@ export class FileDto {
   @ApiProperty({ example: 1 })
   attempts: number;
 
-  @ApiProperty({ example: 90 })
-  retentionDays: number;
-
   @ApiProperty({ 
     example: null, 
     nullable: true,
