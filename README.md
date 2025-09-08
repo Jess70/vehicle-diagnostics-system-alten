@@ -36,6 +36,12 @@ docker ps
 - **📊 Prometheus Metrics**: http://localhost:9090
 - **📈 MinIO Console**: http://localhost:9001 (minioadmin/minioadmin123)
 
+### 🎬 Demo Video
+
+Watch a short demo of the system here:
+
+[Demo Video — Vehicle Diagnostics Dashboard](https://drive.google.com/file/d/1RwQZHRawllAJwHRMJppb4uE3SgXeZIQe/view?usp=sharing)
+
 ## 📁 Upload Test Files
 
 The system accepts `.txt` and `.log` files in a specific format. Here's the required log format:
